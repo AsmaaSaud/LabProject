@@ -1,0 +1,125 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using LabProject3.Models;
+
+namespace LabProject3.Controllers
+{
+    public class AuthController : Controller
+    {
+        private readonly Dbgroup2Context _context;
+
+        public AuthController(Dbgroup2Context context)
+        {
+            _context = context;
+        }
+
+        // GET: Login
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Login(User user)
+        {
+            var existingUser = _context.Users
+                .FirstOrDefault(u => u.UserName == user.UserName && u.UserPassWord == user.UserPassWord);
+
+            if (existingUser != null)
+            {
+                // مثال: حفظ في السيشن أو الانتقال للداشبورد
+                return RedirectToAction("HomePage");
+            }
+
+            ViewBag.LoginFailed = true;
+            return View(user);
+        }
+
+        // GET: Register
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Register(User user, string ConfirmPassword)
+        {
+            // التحقق من تطابق كلمتي المرور
+            if (user.UserPassWord != ConfirmPassword)
+            {
+                ViewBag.PasswordMismatch = true;
+                return View(user);
+            }
+
+            // التحقق من أن كلمة المرور ليست فارغة
+            if (string.IsNullOrWhiteSpace(user.UserPassWord))
+            {
+                ViewBag.PasswordEmpty = true;
+                return View(user);
+            }
+
+            // التحقق من وجود مستخدم بنفس اسم المستخدم أو البريد الإلكتروني
+            var existingUser = _context.Users
+                .FirstOrDefault(u => u.UserName == user.UserName || u.Email == user.Email);
+
+            if (existingUser != null)
+            {
+                ViewBag.UserExists = true;
+                return View(user);
+            }
+
+            if (ModelState.IsValid)
+            {
+                // 🟢 الحل البديل: توليد رقم جديد يدويًا
+                int maxId = _context.Users.Any() ? _context.Users.Max(u => u.UserId) : 0;
+                user.LastLogIn = DateTime.Now;
+                user.IsActive = true;
+                _context.Users.Add(user);
+                _context.SaveChanges();
+                return RedirectToAction("Login");
+            }
+
+            return View(user);
+        }
+
+        // Dashboard view
+        public IActionResult HomePage()
+        {
+            return View();
+        }
+
+        // GET: عرض صفحة نسيت كلمة المرور
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(User model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
+
+                if (user != null)
+                {
+                    // إرسال بريد إلكتروني فعلي هنا
+                    // SendPasswordResetEmail(user.Email);
+
+                    return RedirectToAction("Login", new { resetSuccess = true });
+                }
+                else
+                {
+                    ViewBag.Error = true;
+                    return View(model);
+                }
+            }
+
+            return View(model);
+        }
+    }
+}

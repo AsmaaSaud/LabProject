@@ -1,0 +1,66 @@
+﻿@model List<LabProject3.Models.DeviceReportViewModel>
+@{
+    Layout = null;
+    var title = ViewBag.ReportTitle ?? "تقرير";
+    var from = ViewBag.FromDate;
+    var to = ViewBag.ToDate;
+}
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="utf-8" />
+    <title>@title</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/Gruop3Style.css" />
+</head>
+<body class="printreport-body">
+    <h2 class="printreport-main-title">@title</h2>
+    <div class="printreport-meta-info">
+        <div>تاريخ التغطية: @from إلى @to</div>
+        <div>التقرير من نوع: @ViewBag.ReportType</div>
+    </div>
+
+    <h4 class="printreport-sub-title">تقرير الأجهزة</h4>
+
+    <table class="printreport-table">
+        <thead>
+            <tr>
+                <th>الرقم</th>
+                <th>اسم الجهاز</th>
+                <th>نوع الجهاز</th>
+                <th>الحالة</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.DeviceName</td>
+                    <td>@item.DeviceType</td>
+                    <td>
+                        @{
+                            string statusClass = item.Status switch
+                            {
+                                "تشغيل" => "printreport-status-active",
+                                "صيانة" => "printreport-status-maintenance",
+                                "خارج الخدمة" => "printreport-status-inactive",
+                                _ => "printreport-status-badge"
+                            };
+                        }
+                        <span class="printreport-status-badge @statusClass">@item.Status</span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="printreport-print-button" onclick="this.style.display='none'; window.print();">
+        🖨 طباعة التقرير
+    </button>
+
+    <div class="printreport-footer">
+        تم إنشاء هذا التقرير بواسطة بوابة معمل الابتكارات - @DateTime.Now.Year
+    </div>
+</body>
+</html>
